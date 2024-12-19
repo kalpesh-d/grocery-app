@@ -1,11 +1,11 @@
 'use client';
 import { useState } from 'react';
 import { Search } from 'lucide-react';
-import SearchBar from './components/SearchBar';
-import ProductCard from './components/ProductCard';
-import PriceHistoryModal from './components/PriceHistoryModal';
-import LoadingCard from './components/LoadingCard';
-import useProducts from './hooks/useProducts';
+import SearchBar from '../components/SearchBar';
+import ProductCard from '../components/ProductCard';
+import PriceHistoryModal from '../components/PriceHistoryModal';
+import LoadingCard from '../components/LoadingCard';
+import useProducts from '../hooks/useProducts';
 
 export default function Home() {
   const { products, searchTerm, setSearchTerm } = useProducts();
