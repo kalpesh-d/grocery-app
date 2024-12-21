@@ -16,8 +16,8 @@ export default function Home() {
     try {
       setIsLoading(true);
       const url = search
-        ? `http://localhost:3000/api/products/search?q=${encodeURIComponent(search)}`
-        : 'http://localhost:3000/api/products';
+        ? `/api/products/search?q=${encodeURIComponent(search)}`
+        : '/api/products';
       const response = await fetch(url);
       const data = await response.json();
       setProducts(search ? data.products : data);
