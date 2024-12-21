@@ -3,7 +3,7 @@ import { X, TrendingUp } from 'lucide-react';
 import PriceHistoryChart from './PriceHistoryChart';
 
 export default function PriceHistoryModal({ product, onClose }) {
-  if (!product) return null;
+  if (!product || !Array.isArray(product)) return null;
 
   return (
     <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -12,12 +12,19 @@ export default function PriceHistoryModal({ product, onClose }) {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
-                {product.name}
+                {product[0].name}
                 <TrendingUp className="w-6 h-6 text-blue-500" />
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Price trends over the last 4 months
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-sm text-gray-500">
+                  Price trends across platforms
+                </p>
+                {product[0].variant && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">
+                    {product[0].variant}
+                  </span>
+                )}
+              </div>
             </div>
             <button
               onClick={onClose}
@@ -28,7 +35,7 @@ export default function PriceHistoryModal({ product, onClose }) {
           </div>
         </div>
         <div className="p-6">
-          <PriceHistoryChart priceHistory={product.priceHistory} />
+          <PriceHistoryChart products={product} />
         </div>
       </div>
     </div>

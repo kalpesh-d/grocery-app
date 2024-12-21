@@ -9,31 +9,54 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 
 const colors = {
-  "Walmart": "#2563eb",
-  "Target": "#dc2626",
-  "Whole Foods": "#059669",
-  "Kroger": "#7c3aed"
+  "Zepto": "#2563eb",
+  "Blinkit": "#dc2626",
+  "D-Mart": "#059669"
 };
 
-export default function PriceHistoryChart({ priceHistory }) {
-  const dates = Object.values(priceHistory)[0].map(item => item.date);
-  const chartData = dates.map((date, index) => {
-    const dataPoint = { date };
-    Object.entries(priceHistory).forEach(([store, prices]) => {
-      dataPoint[store] = prices[index].price;
+export default function PriceHistoryChart({ products }) {
+  console.log('Products in chart:', products); // Debug log
+
+  // Get all unique dates across all products
+  const allDates = [...new Set(products.flatMap(p =>
+    p.priceHistory.map(h => new Date(h.date).getTime())
+  ))].sort();
+
+  console.log('All dates:', allDates); // Debug log
+
+  // Create chart data with prices from all platforms for each date
+  const chartData = allDates.map(timestamp => {
+    const dataPoint = { date: timestamp };
+    products.forEach(product => {
+      const historyEntry = product.priceHistory.find(h =>
+        new Date(h.date).getTime() === timestamp
+      );
+      if (historyEntry) {
+        dataPoint[product.platform] = parseFloat(historyEntry.price.replace('₹', ''));
+      }
     });
     return dataPoint;
   });
+
+  console.log('Chart data:', chartData); // Debug log
+
+  if (chartData.length === 0) {
+    return (
+      <div className="w-full h-[400px] flex items-center justify-center text-gray-500">
+        No price history data available
+      </div>
+    );
+  }
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100">
           <p className="font-medium text-gray-900 mb-2">
-            {format(parseISO(label), 'MMMM d, yyyy')}
+            {format(new Date(label), 'MMMM d, yyyy')}
           </p>
           <div className="space-y-1.5">
             {payload.map((entry, index) => (
@@ -43,7 +66,7 @@ export default function PriceHistoryChart({ priceHistory }) {
                   style={{ backgroundColor: entry.color }}
                 />
                 <span className="font-medium text-gray-700">{entry.name}</span>
-                <span className="text-gray-900">${entry.value.toFixed(2)}</span>
+                <span className="text-gray-900">₹{entry.value.toFixed(2)}</span>
               </div>
             ))}
           </div>
@@ -63,13 +86,15 @@ export default function PriceHistoryChart({ priceHistory }) {
           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
           <XAxis
             dataKey="date"
-            tickFormatter={(date) => format(parseISO(date), 'MMM d')}
+            type="number"
+            domain={['auto', 'auto']}
+            tickFormatter={(timestamp) => format(new Date(timestamp), 'MMM d, HH:mm')}
             stroke="#64748b"
             tick={{ fill: '#64748b' }}
             tickLine={{ stroke: '#cbd5e1' }}
           />
           <YAxis
-            tickFormatter={(value) => `$${value.toFixed(2)}`}
+            tickFormatter={(value) => `₹${value.toFixed(2)}`}
             stroke="#64748b"
             tick={{ fill: '#64748b' }}
             tickLine={{ stroke: '#cbd5e1' }}
@@ -83,12 +108,13 @@ export default function PriceHistoryChart({ priceHistory }) {
               <span className="text-sm font-medium text-gray-700">{value}</span>
             )}
           />
-          {Object.keys(priceHistory).map((store) => (
+          {products.map((product) => (
             <Line
-              key={store}
+              key={product._id}
               type="monotone"
-              dataKey={store}
-              stroke={colors[store]}
+              dataKey={product.platform}
+              name={`${product.platform} (${product.variant})`}
+              stroke={colors[product.platform]}
               strokeWidth={2.5}
               dot={{
                 r: 4,
@@ -99,8 +125,9 @@ export default function PriceHistoryChart({ priceHistory }) {
               activeDot={{
                 r: 6,
                 strokeWidth: 0,
-                fill: colors[store]
+                fill: colors[product.platform]
               }}
+              connectNulls
             />
           ))}
         </LineChart>

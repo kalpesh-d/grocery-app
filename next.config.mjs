@@ -4,7 +4,19 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "images.unsplash.com",
+        hostname: "cdn.dmart.in",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.zeptonow.com",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.grofers.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.grofers.com",
       },
     ],
   },
