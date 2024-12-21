@@ -17,31 +17,49 @@ const colors = {
   "D-Mart": "#059669"
 };
 
+const parseMongoDate = (dateStr) => {
+  try {
+    // Handle MongoDB ISODate format
+    if (typeof dateStr === 'object' && dateStr.$date) {
+      return new Date(dateStr.$date).getTime();
+    }
+    // Handle regular date string
+    return new Date(dateStr).getTime();
+  } catch (error) {
+    console.error('Error parsing date:', error);
+    return null;
+  }
+};
+
 export default function PriceHistoryChart({ products }) {
-  console.log('Products in chart:', products); // Debug log
+  if (!products || !Array.isArray(products) || products.length === 0) {
+    return (
+      <div className="w-full h-[400px] flex items-center justify-center text-gray-500">
+        No price history data available
+      </div>
+    );
+  }
 
   // Get all unique dates across all products
   const allDates = [...new Set(products.flatMap(p =>
-    p.priceHistory.map(h => new Date(h.date).getTime())
-  ))].sort();
-
-  console.log('All dates:', allDates); // Debug log
+    (p.priceHistory || []).map(h => parseMongoDate(h.date))
+  ))].filter(Boolean).sort();
 
   // Create chart data with prices from all platforms for each date
   const chartData = allDates.map(timestamp => {
     const dataPoint = { date: timestamp };
     products.forEach(product => {
-      const historyEntry = product.priceHistory.find(h =>
-        new Date(h.date).getTime() === timestamp
-      );
-      if (historyEntry) {
-        dataPoint[product.platform] = parseFloat(historyEntry.price.replace('₹', ''));
+      if (product.priceHistory) {
+        const historyEntry = product.priceHistory.find(h =>
+          parseMongoDate(h.date) === timestamp
+        );
+        if (historyEntry) {
+          dataPoint[product.platform] = parseFloat(historyEntry.price.replace('₹', ''));
+        }
       }
     });
     return dataPoint;
   });
-
-  console.log('Chart data:', chartData); // Debug log
 
   if (chartData.length === 0) {
     return (
@@ -113,7 +131,7 @@ export default function PriceHistoryChart({ products }) {
               key={product._id}
               type="monotone"
               dataKey={product.platform}
-              name={`${product.platform} (${product.variant})`}
+              name={`${product.platform} (${product.variant || 'Default'})`}
               stroke={colors[product.platform]}
               strokeWidth={2.5}
               dot={{
