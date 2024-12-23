@@ -1,27 +1,34 @@
 'use client';
 import Image from 'next/image';
-import { CheckCircle2, XCircle, TrendingUp } from 'lucide-react';
+import { CheckCircle2, XCircle, TrendingUp, ShoppingBag } from 'lucide-react';
 import { useState } from 'react';
 
 export default function ProductCard({ product, onViewHistory }) {
   const [imageError, setImageError] = useState(false);
   const lowestPrice = Math.min(...product.products.map(p => parseFloat(p.currentPrice.replace('₹', ''))));
 
-  const fallbackImage = `https://via.placeholder.com/400x400.png?text=${encodeURIComponent(product.products[0].name)}`;
-
   return (
     <div className="group relative bg-white hover:bg-gray-50 rounded-xl border border-gray-100 
       transition-all duration-300 hover:shadow-lg overflow-hidden">
       <div className="relative h-40 w-full bg-gray-100">
-        <Image
-          src={imageError ? fallbackImage : product.products[0].image}
-          alt={product.products[0].name}
-          priority={true}
-          fill
-          sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
-          className="object-contain transition-transform duration-300 group-hover:scale-105"
-          onError={() => setImageError(true)}
-        />
+        {imageError ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50">
+            <ShoppingBag className="w-12 h-12 text-gray-300 mb-2" />
+            <span className="text-xs text-gray-500 px-4 text-center line-clamp-2">
+              {product.products[0].name}
+            </span>
+          </div>
+        ) : (
+          <Image
+            src={product.products[0].image}
+            alt={product.products[0].name}
+            priority={false}
+            fill
+            sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
+            className="object-contain transition-transform duration-300 group-hover:scale-105"
+            onError={() => setImageError(true)}
+          />
+        )}
         <button
           onClick={() => onViewHistory(product.products)}
           className="absolute top-2 right-2 p-1.5 bg-white/90 hover:bg-white rounded-lg
