@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Search } from 'lucide-react';
 import SearchBar from '../components/SearchBar';
 import ProductCard from '../components/ProductCard';
@@ -11,16 +11,27 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const loader = useRef(null);
 
-  const fetchProducts = useCallback(async (search = '') => {
+  const fetchProducts = useCallback(async (search = '', pageNum = 1) => {
     try {
       setIsLoading(true);
       const url = search
-        ? `/api/products/search?q=${encodeURIComponent(search)}`
-        : '/api/products';
+        ? `/api/products/search?q=${encodeURIComponent(search)}&page=${pageNum}`
+        : `/api/products?page=${pageNum}`;
       const response = await fetch(url);
       const data = await response.json();
-      setProducts(search ? data.products : data);
+
+      if (pageNum === 1) {
+        setProducts(search ? data.products : data);
+      } else {
+        setProducts(prev => [...prev, ...(search ? data.products : data)]);
+      }
+
+      // Check if we have more products to load
+      setHasMore((search ? data.products : data).length === 8);
     } catch (error) {
       console.error('Error fetching products:', error);
       setProducts([]);
@@ -31,21 +42,52 @@ export default function Home() {
 
   // Initial load
   useEffect(() => {
-    fetchProducts();
+    fetchProducts('', 1);
   }, [fetchProducts]);
 
   // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchTerm) {
-        fetchProducts(searchTerm);
+        setPage(1);
+        fetchProducts(searchTerm, 1);
       } else {
-        fetchProducts();
+        setPage(1);
+        fetchProducts('', 1);
       }
     }, 300); // 300ms debounce
 
     return () => clearTimeout(timer);
   }, [searchTerm, fetchProducts]);
+
+  // Intersection Observer for infinite scrolling
+  useEffect(() => {
+    const options = {
+      root: null,
+      rootMargin: "20px",
+      threshold: 1.0
+    };
+
+    const observer = new IntersectionObserver(entries => {
+      const first = entries[0];
+      if (first.isIntersecting && hasMore && !isLoading) {
+        const nextPage = page + 1;
+        setPage(nextPage);
+        fetchProducts(searchTerm, nextPage);
+      }
+    }, options);
+
+    const currentLoader = loader.current;
+    if (currentLoader) {
+      observer.observe(currentLoader);
+    }
+
+    return () => {
+      if (currentLoader) {
+        observer.unobserve(currentLoader);
+      }
+    };
+  }, [fetchProducts, hasMore, isLoading, page, searchTerm]);
 
   return (
     <main className="min-h-screen bg-[#fafafa]">
@@ -62,19 +104,19 @@ export default function Home() {
           <SearchBar searchTerm={searchTerm} onSearch={setSearchTerm} />
         </div>
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {products && products.map((product, index) => (
+            <ProductCard
+              key={`${product._id}-${index}`}
+              product={product}
+              onViewHistory={setSelectedProduct}
+            />
+          ))}
+        </div>
+
+        {isLoading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
             {[...Array(8)].map((_, i) => <LoadingCard key={`loading-${i}`} />)}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {products && products.map((product, index) => (
-              <ProductCard
-                key={`${product._id}-${index}`}
-                product={product}
-                onViewHistory={setSelectedProduct}
-              />
-            ))}
           </div>
         )}
 
@@ -84,6 +126,9 @@ export default function Home() {
             <p className="text-gray-500">No products found matching your search.</p>
           </div>
         )}
+
+        {/* Infinite scroll trigger element */}
+        {hasMore && <div ref={loader} className="h-10" />}
 
         {selectedProduct && (
           <PriceHistoryModal

@@ -61,6 +61,17 @@ export default function PriceHistoryChart({ products }) {
     return dataPoint;
   });
 
+  // Add current prices as the latest data point
+  const currentTimestamp = new Date().getTime();
+  const currentDataPoint = { date: currentTimestamp };
+  products.forEach(product => {
+    currentDataPoint[product.platform] = parseFloat(product.currentPrice.replace('₹', ''));
+  });
+  chartData.push(currentDataPoint);
+
+  // Sort data by date
+  chartData.sort((a, b) => a.date - b.date);
+
   if (chartData.length === 0) {
     return (
       <div className="w-full h-[400px] flex items-center justify-center text-gray-500">

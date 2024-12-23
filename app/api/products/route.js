@@ -2,8 +2,13 @@ import Product from "../../../models/Product";
 import connectToDB from "../../../libs/db/mongodb";
 import { NextResponse } from "next/server";
 
-export const GET = async () => {
+export const GET = async (request) => {
   try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page")) || 1;
+    const limit = 8;
+    const skip = (page - 1) * limit;
+
     await connectToDB();
 
     const products = await Product.aggregate([
@@ -78,6 +83,9 @@ export const GET = async () => {
           "products.createdAt": -1,
         },
       },
+      // Apply pagination
+      { $skip: skip },
+      { $limit: limit },
     ]);
 
     return NextResponse.json(products);

@@ -6,6 +6,9 @@ export const GET = async (request) => {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q");
+    const page = parseInt(searchParams.get("page")) || 1;
+    const limit = 8;
+    const skip = (page - 1) * limit;
 
     if (!query) {
       return NextResponse.json({ products: [] });
@@ -91,10 +94,9 @@ export const GET = async (request) => {
           "products.createdAt": -1,
         },
       },
-      // Limit results
-      {
-        $limit: 10,
-      },
+      // Apply pagination
+      { $skip: skip },
+      { $limit: limit },
     ]);
 
     return NextResponse.json({ products });
