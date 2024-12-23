@@ -18,6 +18,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "*.grofers.com",
       },
+      {
+        protocol: "https",
+        hostname: "via.placeholder.com",
+      },
     ],
   },
 };
