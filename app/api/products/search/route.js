@@ -90,8 +90,13 @@ export const GET = async (request) => {
       },
       // Sort by creation date
       {
+        $addFields: {
+          firstProduct: { $arrayElemAt: ["$products", 0] },
+        },
+      },
+      {
         $sort: {
-          "products.createdAt": -1,
+          "firstProduct.createdAt": -1,
         },
       },
       // Apply pagination

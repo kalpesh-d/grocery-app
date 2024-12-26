@@ -24,14 +24,16 @@ export default function Home() {
       const response = await fetch(url);
       const data = await response.json();
 
+      const newProducts = search ? data.products : Array.isArray(data) ? data : data.products;
+
       if (pageNum === 1) {
-        setProducts(search ? data.products : data);
+        setProducts(newProducts);
       } else {
-        setProducts(prev => [...prev, ...(search ? data.products : data)]);
+        setProducts(prev => [...prev, ...newProducts]);
       }
 
       // Check if we have more products to load
-      setHasMore((search ? data.products : data).length === 8);
+      setHasMore(newProducts.length === 8);
     } catch (error) {
       console.error('Error fetching products:', error);
       setProducts([]);
