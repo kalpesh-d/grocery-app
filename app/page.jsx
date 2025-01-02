@@ -29,7 +29,12 @@ export default function Home() {
       if (pageNum === 1) {
         setProducts(newProducts);
       } else {
-        setProducts(prev => [...prev, ...newProducts]);
+        // Check for duplicates using _id
+        setProducts(prev => {
+          const existingIds = new Set(prev.map(p => p._id));
+          const uniqueNewProducts = newProducts.filter(p => !existingIds.has(p._id));
+          return [...prev, ...uniqueNewProducts];
+        });
       }
 
       // Check if we have more products to load

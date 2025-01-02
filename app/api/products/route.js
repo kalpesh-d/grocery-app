@@ -88,7 +88,17 @@ export const GET = async (request) => {
           "firstProduct.createdAt": -1,
         },
       },
-      // Apply pagination
+      // Add distinct stage by _id
+      {
+        $group: {
+          _id: "$_id.name",
+          doc: { $first: "$$ROOT" },
+        },
+      },
+      {
+        $replaceRoot: { newRoot: "$doc" },
+      },
+      // Then apply pagination
       { $skip: skip },
       { $limit: limit },
     ]);
