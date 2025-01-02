@@ -27,6 +27,8 @@ export default function ProductCard({ product, onViewHistory }) {
             sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
             className="object-contain transition-transform duration-300 group-hover:scale-105"
             onError={() => setImageError(true)}
+            referrerPolicy="origin"
+            crossOrigin="anonymous"
           />
         )}
         <button
