@@ -26,22 +26,31 @@ export default function Home() {
 
       const newProducts = search ? data.products : Array.isArray(data) ? data : data.products;
 
+      if (!newProducts || newProducts.length === 0) {
+        setHasMore(false);
+        if (pageNum === 1) {
+          setProducts([]);
+        }
+        return;
+      }
+
       if (pageNum === 1) {
         setProducts(newProducts);
       } else {
-        // Check for duplicates using _id
         setProducts(prev => {
-          const existingIds = new Set(prev.map(p => p._id));
-          const uniqueNewProducts = newProducts.filter(p => !existingIds.has(p._id));
+          // Create a Set of existing product IDs for O(1) lookup
+          const existingIds = new Set(prev.map(p => p._id.name));
+          // Filter out duplicates based on _id.name
+          const uniqueNewProducts = newProducts.filter(p => !existingIds.has(p._id.name));
           return [...prev, ...uniqueNewProducts];
         });
       }
 
-      // Check if we have more products to load
       setHasMore(newProducts.length === 8);
     } catch (error) {
       console.error('Error fetching products:', error);
       setProducts([]);
+      setHasMore(false);
     } finally {
       setIsLoading(false);
     }
@@ -77,7 +86,7 @@ export default function Home() {
 
     const observer = new IntersectionObserver(entries => {
       const first = entries[0];
-      if (first.isIntersecting && hasMore && !isLoading) {
+      if (first.isIntersecting && hasMore && !isLoading && products.length > 0) {
         const nextPage = page + 1;
         setPage(nextPage);
         fetchProducts(searchTerm, nextPage);
@@ -85,7 +94,7 @@ export default function Home() {
     }, options);
 
     const currentLoader = loader.current;
-    if (currentLoader) {
+    if (currentLoader && hasMore) {
       observer.observe(currentLoader);
     }
 
@@ -94,7 +103,7 @@ export default function Home() {
         observer.unobserve(currentLoader);
       }
     };
-  }, [fetchProducts, hasMore, isLoading, page, searchTerm]);
+  }, [fetchProducts, hasMore, isLoading, page, searchTerm, products.length]);
 
   return (
     <main className="min-h-screen bg-[#fafafa]">
